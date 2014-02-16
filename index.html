@@ -1,0 +1,240 @@
+<html>
+	<head>
+		<title>My first Three.js app</title>
+		<style>
+			canvas { width: 100%; height: 100% }
+			html,body { overflow: hidden; margin: 0 }
+		</style>
+	</head>
+	<body>
+		<script src="three.js"></script>
+		<script>window.THREE || document.write('<script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js">\x3C/script>')</script>
+		<script src="live.js"></script>
+		<script>
+			var scene = new THREE.Scene()
+			var camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000)
+
+			var renderer = new THREE.WebGLRenderer()
+			var canvas = renderer.domElement
+			renderer.setSize(window.innerWidth, window.innerHeight)
+			document.body.appendChild(canvas)
+
+			var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document
+			console.log(havePointerLock)
+			canvas.requestPointerLock = canvas.requestPointerLock || canvas.mozRequestPointerLock || canvas.webkitRequestPointerLock
+			canvas.requestPointerLock()
+
+			var geometry = new THREE.CubeGeometry(1,1,1)
+			var material = new THREE.MeshBasicMaterial({
+				color: 0x05aa50,
+				wireframe: true,
+				wireframeLinewidth: 3,
+				vertexColors: THREE.FaceColors
+			})
+
+			for(var i = 0; i < 10; i++){
+				var cube = new THREE.Mesh(geometry, material)
+				cube.position.x = Math.random() * 10 - (Math.random() * 10)
+				cube.position.y = Math.random() * 10 - (Math.random() * 10)
+				cube.position.z = Math.random() * 10 - (Math.random() * 10)
+				scene.add(cube)
+			}
+
+			var axis_helper = new THREE.AxisHelper(5)
+			scene.add(axis_helper)
+
+			camera.position.z = 7
+			camera.position.y = 1.5
+			camera.position.x = 2
+
+			var render = function () {
+				requestAnimationFrame(render)
+
+				if(action.forward)
+					camera.position.z -= .05
+				if(action.backward)
+					camera.position.z += .05
+				if(action.up)
+					camera.position.y += .05
+				if(action.down)
+					camera.position.y -= .05
+				if(action.left)
+					camera.position.x -= .05
+				if(action.right)
+					camera.position.x += .05
+
+				if(action.rotate_up)
+					camera.rotation.x += .01
+				if(action.rotate_down)
+					camera.rotation.x -= .01
+				if(action.rotate_left)
+					camera.rotation.y += .01
+				if(action.rotate_right)
+					camera.rotation.y -= .01
+
+				cube.rotation.x += 0.001
+				cube.rotation.y += 0.01
+				cube.rotation.z += 0.005
+
+				renderer.render(scene, camera)
+			}
+
+			var action = {
+				forward: false,
+				backward: false,
+				right: false,
+				left: false,
+				up: false,
+				down: false,
+				rotate_up: false,
+				rotate_down: false,
+				rotate_left: false,
+				rotate_right: false,
+			}
+			document.addEventListener('keyup', function(e){
+				switch(e.keyCode){
+					case KEY.UP:
+						action.forward = false
+						break
+					case KEY.DOWN:
+						action.backward = false
+						break
+					case KEY.LEFT:
+						action.left = false
+						break
+					case KEY.RIGHT:
+						action.right = false
+						break
+					case KEY.SPACE:
+						action.up = false
+						break
+					case KEY.C:
+						action.down = false
+						break
+					case KEY.W:
+						action.rotate_up = false
+						break
+					case KEY.A:
+						action.rotate_left = false
+						break
+					case KEY.S:
+						action.rotate_down = false
+						break
+					case KEY.D:
+						action.rotate_right = false
+						break
+				}
+			})
+
+			document.addEventListener('keydown', function(e){
+				switch(e.keyCode){
+					case KEY.UP:
+						action.forward = true
+						break
+					case KEY.DOWN:
+						action.backward = true
+						break
+					case KEY.LEFT:
+						action.left = true
+						break
+					case KEY.RIGHT:
+						action.right = true
+						break
+					case KEY.SPACE:
+						action.up = true
+						break
+					case KEY.C:
+						action.down = true
+						break
+					case KEY.W:
+						action.rotate_up = true
+						break
+					case KEY.A:
+						action.rotate_left = true
+						break
+					case KEY.S:
+						action.rotate_down = true
+						break
+					case KEY.D:
+						action.rotate_right = true
+						break
+				}
+			})
+
+			var pointer_locked = false
+			var mouse_clicked = false
+			var start_move = {
+				x: 0,
+				y: 0,
+			}
+			var start_rotation
+			document.addEventListener('mousemove', function(e){
+				if(pointer_locked){}
+				else{
+					if(mouse_clicked){
+						x_dir = Math.cos(camera.rotation.z) * Math.cos(camera.rotation.y)
+						y_dir = Math.sin(camera.rotation.z) * Math.cos(camera.rotation.y)
+						z_dir = Math.sin(camera.rotation.y)
+						var dir = new THREE.Vector3(x_dir, y_dir, z_dir)
+						dir.normalize()
+
+						var diff_x = e.screenX - start_move.x
+						var diff_y = e.screenY - start_move.y
+						dir.x += (diff_x / 10000)
+						dir.y += (diff_y / 10000)
+						camera.rotation.x += dir.x / 1000
+						camera.rotation.y += dir.y / 1000
+					}
+				}
+			})
+			document.addEventListener('mouseup', function(e){
+				mouse_clicked = false
+			})
+			document.addEventListener('mousedown', function(e){
+				start_move.x = e.screenX
+				start_move.y = e.screenY
+				mouse_clicked = true
+			})
+			function pointer_lock_callback(e){
+				if(document.pointerLockElement === canvas || document.mozPointerLockElement === canvas || document.webkitPointerLockElement === canvas){
+					pointer_locked = true
+					console.log("All Good!")
+				}else{
+					pointer_locked = false
+					console.log("Not locked...")
+				}
+			}
+			document.addEventListener('pointerlockchange', pointer_lock_callback, false)
+			document.addEventListener('mozpointerlockchange', pointer_lock_callback, false)
+			document.addEventListener('webkitpointerlockchange', pointer_lock_callback, false)
+
+			document.addEventListener('pointerlockerror', pointer_lock_callback, false)
+			document.addEventListener('mozpointerlockerror', pointer_lock_callback, false)
+			document.addEventListener('webkitpointerlockerror', pointer_lock_callback, false)
+
+			KEY = {
+				BACKSPACE: 8,
+				TAB:       9,
+				RETURN:   13,
+				ESC:      27,
+				SPACE:    32,
+				PAGEUP:   33,
+				PAGEDOWN: 34,
+				END:      35,
+				HOME:     36,
+				LEFT:     37,
+				UP:       38,
+				RIGHT:    39,
+				DOWN:     40,
+				INSERT:   45,
+				DELETE:   46,
+				ZERO:     48, ONE: 49, TWO: 50, THREE: 51, FOUR: 52, FIVE: 53, SIX: 54, SEVEN: 55, EIGHT: 56, NINE: 57,
+				A:        65, B: 66, C: 67, D: 68, E: 69, F: 70, G: 71, H: 72, I: 73, J: 74, K: 75, L: 76, M: 77,
+				N: 78, O: 79, P: 80, Q: 81, R: 82, S: 83, T: 84, U: 85, V: 86, W: 87, X: 88, Y: 89, Z: 90,
+				TILDA:    192
+			}
+
+			render()
+		</script>
+	</body>
+</html>
